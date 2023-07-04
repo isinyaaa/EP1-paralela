@@ -72,13 +72,11 @@ static void *update_thread(void *args) {
 }
 
 void simulate_pth(byte *grid_1, byte *grid_2, int grid_size, int num_threads) {
-    pthread_t thread;
+    pthread_t threads[num_threads];
     pthread_attr_t attr;
-    thread_args_t t_args;
-    int rc;
-
-    t_args.thread_id = 0;
-    t_args.batch_size = grid_size;
+    thread_args_t *t_args = malloc(sizeof(thread_args_t) * num_threads);
+    int batch_size = grid_size / num_threads,
+        rc;
 
     SHARED.grid_1 = grid_1;
     SHARED.grid_2 = grid_2;
@@ -89,16 +87,23 @@ void simulate_pth(byte *grid_1, byte *grid_2, int grid_size, int num_threads) {
 
     for (int i = 0; i < ITERATIONS/2; i++) {
         pthread_barrier_init(&barrier, NULL, num_threads);
-        rc = pthread_create(&thread, &attr, update_thread, (void *) &t_args);
-        if (rc) {
-            printf("ERROR; return code from pthread_create() is %d\n", rc);
-            exit(-1);
+        for (int t = 0; t < num_threads; t++) {
+            t_args[t].thread_id = t;
+            t_args[t].batch_size = batch_size;
+
+            rc = pthread_create(&threads[t], &attr, update_thread, (void *) &t_args[t]);
+            if (rc) {
+                printf("ERROR; return code from pthread_create() is %d\n", rc);
+                exit(-1);
+            }
         }
 
-        rc = pthread_join(thread, NULL);
-        if (rc) {
-            printf("ERROR; return code from pthread_join() is %d\n", rc);
-            exit(-1);
+        for (int t = 0; t < num_threads; t++) {
+            rc = pthread_join(threads[t], NULL);
+            if (rc) {
+                printf("ERROR; return code from pthread_join() is %d\n", rc);
+                exit(-1);
+            }
         }
     }
 
