@@ -1,5 +1,12 @@
+#include <stdlib.h>
 #include "lga_base.h"
 #include "lga_pth.h"
+
+struct SHARED_DATA {
+    byte *grid_1;
+    byte *grid_2;
+    int grid_size;
+} SHARED;
 
 static byte get_next_cell(int i, int j, byte *grid_in, int grid_size) {
     byte next_cell = EMPTY;
@@ -37,9 +44,23 @@ static void update(byte *grid_in, byte *grid_out, int grid_size) {
     }
 }
 
+static void *update_thread(void *args) {
+    byte *grid_1 = SHARED.grid_1;
+    byte *grid_2 = SHARED.grid_2;
+    int grid_size = SHARED.grid_size;
+
+    update(grid_1, grid_2, grid_size);
+    update(grid_2, grid_1, grid_size);
+
+    return NULL;
+}
+
 void simulate_pth(byte *grid_1, byte *grid_2, int grid_size, int num_threads) {
+    SHARED.grid_1 = grid_1;
+    SHARED.grid_2 = grid_2;
+    SHARED.grid_size = grid_size;
+
     for (int i = 0; i < ITERATIONS/2; i++) {
-        update(grid_1, grid_2, grid_size);
-        update(grid_2, grid_1, grid_size);
+        update_thread(NULL);
     }
 }
