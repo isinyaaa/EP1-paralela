@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "lga_base.h"
 #include "lga_pth.h"
+#include "pthread_barrier.h"
 
 struct SHARED_DATA {
     byte *grid_1;
@@ -14,6 +15,8 @@ typedef struct {
     int thread_id;
     int batch_size;
 } thread_args_t;
+
+pthread_barrier_t barrier;
 
 static byte get_next_cell(int i, int j, byte *grid_in, int grid_size) {
     byte next_cell = EMPTY;
@@ -62,6 +65,7 @@ static void *update_thread(void *args) {
     int grid_size = SHARED.grid_size;
 
     update(grid_1, grid_2, grid_size, start, end);
+    pthread_barrier_wait(&barrier);
     update(grid_2, grid_1, grid_size, start, end);
 
     pthread_exit(NULL);
@@ -84,6 +88,7 @@ void simulate_pth(byte *grid_1, byte *grid_2, int grid_size, int num_threads) {
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     for (int i = 0; i < ITERATIONS/2; i++) {
+        pthread_barrier_init(&barrier, NULL, num_threads);
         rc = pthread_create(&thread, &attr, update_thread, (void *) &t_args);
         if (rc) {
             printf("ERROR; return code from pthread_create() is %d\n", rc);
@@ -98,4 +103,5 @@ void simulate_pth(byte *grid_1, byte *grid_2, int grid_size, int num_threads) {
     }
 
     pthread_attr_destroy(&attr);
+    pthread_barrier_destroy(&barrier);
 }
