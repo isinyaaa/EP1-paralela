@@ -1,3 +1,5 @@
+#include <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "lga_base.h"
 #include "lga_pth.h"
@@ -52,15 +54,34 @@ static void *update_thread(void *args) {
     update(grid_1, grid_2, grid_size);
     update(grid_2, grid_1, grid_size);
 
-    return NULL;
+    pthread_exit(NULL);
 }
 
 void simulate_pth(byte *grid_1, byte *grid_2, int grid_size, int num_threads) {
+    pthread_t thread;
+    pthread_attr_t attr;
+    int rc;
+
     SHARED.grid_1 = grid_1;
     SHARED.grid_2 = grid_2;
     SHARED.grid_size = grid_size;
 
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
     for (int i = 0; i < ITERATIONS/2; i++) {
-        update_thread(NULL);
+        rc = pthread_create(&thread, &attr, update_thread, NULL);
+        if (rc) {
+            printf("ERROR; return code from pthread_create() is %d\n", rc);
+            exit(-1);
+        }
+
+        rc = pthread_join(thread, NULL);
+        if (rc) {
+            printf("ERROR; return code from pthread_join() is %d\n", rc);
+            exit(-1);
+        }
     }
+
+    pthread_attr_destroy(&attr);
 }
