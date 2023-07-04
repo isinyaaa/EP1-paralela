@@ -10,6 +10,11 @@ struct SHARED_DATA {
     int grid_size;
 } SHARED;
 
+typedef struct {
+    int thread_id;
+    int batch_size;
+} thread_args_t;
+
 static byte get_next_cell(int i, int j, byte *grid_in, int grid_size) {
     byte next_cell = EMPTY;
 
@@ -35,8 +40,9 @@ static byte get_next_cell(int i, int j, byte *grid_in, int grid_size) {
     return check_particles_collision(next_cell);
 }
 
-static void update(byte *grid_in, byte *grid_out, int grid_size) {
-    for (int i = 0; i < grid_size; i++) {
+static void update(byte *grid_in, byte *grid_out, int grid_size,
+                   int start, int end) {
+    for (int i = start; i < end; i++) {
         for (int j = 0; j < grid_size; j++) {
             if (grid_in[ind2d(i,j)] == WALL)
                 grid_out[ind2d(i,j)] = WALL;
@@ -47,12 +53,16 @@ static void update(byte *grid_in, byte *grid_out, int grid_size) {
 }
 
 static void *update_thread(void *args) {
+    thread_args_t *t_args = (thread_args_t *) args;
+    int start = t_args->thread_id * t_args->batch_size;
+    int end = (t_args->thread_id + 1) * t_args->batch_size;
+
     byte *grid_1 = SHARED.grid_1;
     byte *grid_2 = SHARED.grid_2;
     int grid_size = SHARED.grid_size;
 
-    update(grid_1, grid_2, grid_size);
-    update(grid_2, grid_1, grid_size);
+    update(grid_1, grid_2, grid_size, start, end);
+    update(grid_2, grid_1, grid_size, start, end);
 
     pthread_exit(NULL);
 }
@@ -60,7 +70,11 @@ static void *update_thread(void *args) {
 void simulate_pth(byte *grid_1, byte *grid_2, int grid_size, int num_threads) {
     pthread_t thread;
     pthread_attr_t attr;
+    thread_args_t t_args;
     int rc;
+
+    t_args.thread_id = 0;
+    t_args.batch_size = grid_size;
 
     SHARED.grid_1 = grid_1;
     SHARED.grid_2 = grid_2;
@@ -70,7 +84,7 @@ void simulate_pth(byte *grid_1, byte *grid_2, int grid_size, int num_threads) {
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     for (int i = 0; i < ITERATIONS/2; i++) {
-        rc = pthread_create(&thread, &attr, update_thread, NULL);
+        rc = pthread_create(&thread, &attr, update_thread, (void *) &t_args);
         if (rc) {
             printf("ERROR; return code from pthread_create() is %d\n", rc);
             exit(-1);
