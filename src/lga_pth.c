@@ -64,6 +64,9 @@ static void *update_thread(void *args) {
     byte *grid_2 = SHARED.grid_2;
     int grid_size = SHARED.grid_size;
 
+    if (end > grid_size)
+        end = grid_size;
+
     update(grid_1, grid_2, grid_size, start, end);
     pthread_barrier_wait(&barrier);
     update(grid_2, grid_1, grid_size, start, end);
@@ -76,7 +79,10 @@ void simulate_pth(byte *grid_1, byte *grid_2, int grid_size, int num_threads) {
     pthread_attr_t attr;
     thread_args_t *t_args = malloc(sizeof(thread_args_t) * num_threads);
     int batch_size = grid_size / num_threads,
+        leftover = grid_size % num_threads,
         rc;
+
+    num_threads += !!leftover;
 
     SHARED.grid_1 = grid_1;
     SHARED.grid_2 = grid_2;
