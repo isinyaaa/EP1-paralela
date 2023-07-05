@@ -1,3 +1,4 @@
+#include <omp.h>
 #include "lga_base.h"
 #include "lga_omp.h"
 
@@ -39,9 +40,10 @@ static void update(byte *grid_in, byte *grid_out, int grid_size,
 }
 
 static void update_omp(byte *grid_in, byte *grid_out, int grid_size,
-                       int num_chunks, int chunk_size) {
+                       int num_threads, int chunk_size) {
     int start, end;
-    for (int i = 0; i < num_chunks; i++) {
+    #pragma omp parallel for schedule(static) num_threads(num_threads) private(start, end)
+    for (int i = 0; i < num_threads; i++) {
         start = i * chunk_size;
         end = start + chunk_size;
         update(grid_in, grid_out, grid_size, start, end);
