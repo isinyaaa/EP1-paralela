@@ -26,8 +26,9 @@ static byte get_next_cell(int i, int j, byte *grid_in, int grid_size) {
     return check_particles_collision(next_cell);
 }
 
-static void update(byte *grid_in, byte *grid_out, int grid_size) {
-    for (int i = 0; i < grid_size; i++) {
+static void update(byte *grid_in, byte *grid_out, int grid_size,
+                   int start, int end) {
+    for (int i = start; i < end; i++) {
         for (int j = 0; j < grid_size; j++) {
             if (grid_in[ind2d(i,j)] == WALL)
                 grid_out[ind2d(i,j)] = WALL;
@@ -39,7 +40,7 @@ static void update(byte *grid_in, byte *grid_out, int grid_size) {
 
 void simulate_omp(byte *grid_1, byte *grid_2, int grid_size, int num_threads) {
     for (int i = 0; i < ITERATIONS/2; i++) {
-        update(grid_1, grid_2, grid_size);
-        update(grid_2, grid_1, grid_size);
+        update(grid_1, grid_2, grid_size, 0, grid_size);
+        update(grid_2, grid_1, grid_size, 0, grid_size);
     }
 }
