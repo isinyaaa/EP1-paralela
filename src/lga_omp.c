@@ -38,9 +38,21 @@ static void update(byte *grid_in, byte *grid_out, int grid_size,
     }
 }
 
+static void update_omp(byte *grid_in, byte *grid_out, int grid_size,
+                       int num_chunks, int chunk_size) {
+    int start, end;
+    for (int i = 0; i < num_chunks; i++) {
+        start = i * chunk_size;
+        end = start + chunk_size;
+        update(grid_in, grid_out, grid_size, start, end);
+    }
+}
+
 void simulate_omp(byte *grid_1, byte *grid_2, int grid_size, int num_threads) {
+    int chunk_size = grid_size / num_threads;
+
     for (int i = 0; i < ITERATIONS/2; i++) {
-        update(grid_1, grid_2, grid_size, 0, grid_size);
-        update(grid_2, grid_1, grid_size, 0, grid_size);
+        update_omp(grid_1, grid_2, grid_size, num_threads, chunk_size);
+        update_omp(grid_2, grid_1, grid_size, num_threads, chunk_size);
     }
 }
