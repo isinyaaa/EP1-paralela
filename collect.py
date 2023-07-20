@@ -7,7 +7,7 @@ from dataclasses import dataclass, fields
 class Implementation(Enum):
     SEQ = "seq"
     OMP = "omp"
-    PTHREAD = "pth"
+    PTH = "pth"
 
 
 @dataclass
@@ -28,12 +28,13 @@ class MonteCarlo:
         self.runs = runs
         filename_postfix = f"{max_exp}me_{max_threads}mt_{runs}runs"
         self.results_path = f"data/data_{filename_postfix}.csv"
-        self.plot_path = f"data/plot_{filename_postfix}.png"
+        self.plot_path = f"plots/plot_{filename_postfix}.png"
 
     def run(self):
         print("Running Monte Carlo")
 
-        subprocess.call(["make"])
+        # execute inside src folder
+        subprocess.call(["make"], cwd="src")
 
         with open(self.results_path, "w") as f:
             writer = csv.DictWriter(f, fieldnames=[f.name for f in fields(Result)])
@@ -68,7 +69,7 @@ class MonteCarlo:
                                   "--num_threads", str(threads),
                                   "--impl", impl.value,
                                   "--grid_size", str(array_size)],
-                                 text=True, capture_output=True)
+                                 text=True, capture_output=True, cwd="src")
         return process.stdout.strip()
 
     def __simulate(self, array_exp, threads, impl):
@@ -107,7 +108,7 @@ class MonteCarlo:
 
         return runs
 
-    def plot(self, runs):
+    def plot(self, total_runs):
         from matplotlib import pyplot as plt
 
         print("Plotting results")
@@ -178,12 +179,10 @@ def parse_args():
 
 
 def main():
-    from os import chdir, mkdir
+    from os import mkdir
     from os.path import exists
 
     assert exists("src"), "Please run from project root"
-
-    chdir("src")
 
     if not exists("data"):
         mkdir("data")
@@ -197,6 +196,8 @@ def main():
         runs = sim.load()
 
     if args.plot:
+        if not exists("plots"):
+            mkdir("plots")
         sim.plot(runs)
 
 

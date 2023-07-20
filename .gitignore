@@ -3,5 +3,6 @@ grid_gen
 check
 time_test
 *.o
-/src/data
+/data
+/plots
 *.DS_Store
