@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+extern inline bool inbounds(int i, int j, int grid_size);
+
 /*
     Vetor que indica as coordenadas do vizinho de cada posicao i,j no grid hexagonal
     Vizinho de i,j == i + directions[i%2][dir][0], j + directions[i%2][dir][1]
