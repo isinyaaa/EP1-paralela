@@ -37,8 +37,6 @@ void read_grid_from_file(byte *grid, int grid_size);
 
 void initialize_grids(byte *grid_1, byte *grid_2, int grid_size);
 
-inline bool inbounds(int i, int j, int grid_size);
-
 void wall_collision(int i, int j, byte *grid_out, int grid_size, int dir);
 
 byte from_wall_collision(int i, int j, byte *grid_in, int grid_size, int dir);
