@@ -13,7 +13,13 @@ ifeq ($(UNAME_S),Darwin)    # Darwin is for MacOS
     CPPFLAGS = -I/opt/homebrew/opt/llvm/include
 endif
 
-CFLAGS = -Wall -pedantic -O2
+CFLAGS = -Wall -pedantic
+
+ifeq ($(DEBUG),1)
+    CFLAGS += -O0 -g -DDEBUG
+else
+    CFLAGS += -O2
+endif
 
 all: check time_test grid_gen
 
