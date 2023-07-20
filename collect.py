@@ -115,22 +115,11 @@ class MonteCarlo:
 
         print("Plotting results")
 
-        # plot time vs array exp with error bars as stddev for if=0 and if=1
-        # (different lines)
-        # plt.errorbar([r["array_exp"] for r in runs if r["if_count"] == 0],
-        #              [r["time"] for r in runs if r["if_count"] == 0],
-        #              yerr=[r["stddev"] for r in runs if r["if_count"] == 0],
-        #              label="if=0", color="blue", linestyle="dashed")
-        # plt.errorbar([r["array_exp"] for r in runs if r["if_count"] == 1],
-        #              [r["time"] for r in runs if r["if_count"] == 1],
-        #              yerr=[r["stddev"] for r in runs if r["if_count"] == 1],
-        #              label="if=1", color="red")
-        # plt.xlabel("log2(array size)")
-        # plt.ylabel("time (ms)")
-        # plt.legend()
-
         ncols = 3
-        if self.max_thread_exp <= 6:
+        if self.max_thread_exp <= 4:
+            ncols = 2
+            nrows = 2
+        elif self.max_thread_exp <= 6:
             nrows = 2
         else:
             nrows = 3
@@ -139,21 +128,46 @@ class MonteCarlo:
 
         for i, thread_exp in enumerate(range(self.max_thread_exp + 1)):
             threads = 2**thread_exp
-
-            run = [r for r in runs if r["threads"] == threads]
             row = i // ncols
             col = i % ncols
 
-            axes[row, col].errorbar([r["array_exp"] for r in run],
-                                    [r["time"] for r in run],
-                                    yerr=[r["stddev"] for r in run],
-                                    linestyle='None', marker='^', label='Custom')
+            runs = [
+                r for r in total_runs
+                if r["threads"] == threads
+            ]
+            seq_runs = [
+                r for r in runs
+                if r["implementation"] == Implementation.SEQ
+            ]
+            pth_runs = [
+                r for r in runs
+                if r["implementation"] == Implementation.PTH
+            ]
+            omp_runs = [
+                r for r in runs
+                if r["implementation"] == Implementation.OMP
+            ]
 
-            # axes[0, 0].errorbar(length,
-            #                     t_1_mean_2,
-            #                     t_1_std_2,
-            #                     linestyle='None', marker='^', label='Default')
+            axes[row, col].errorbar([r["array_exp"] for r in seq_runs],
+                                    [r["time"] for r in seq_runs],
+                                    yerr=[r["stddev"] for r in seq_runs],
+                                    label="sequential", color="blue", linestyle="dashed")
+
+            axes[row, col].errorbar([r["array_exp"] for r in pth_runs],
+                                    [r["time"] for r in pth_runs],
+                                    yerr=[r["stddev"] for r in pth_runs],
+                                    label="pthread", color="red")
+
+            axes[row, col].errorbar([r["array_exp"] for r in omp_runs],
+                                    [r["time"] for r in omp_runs],
+                                    yerr=[r["stddev"] for r in omp_runs],
+                                    label="openmp", color="green")
+
             axes[row, col].set_title(f"{threads=}")
+
+            axes[row, col].set_xlabel("log2(array size)")
+            axes[row, col].set_ylabel("time (ms)")
+
             axes[row, col].ticklabel_format(style='sci', scilimits=(-3, 3))
             axes[row, col].legend()
 
