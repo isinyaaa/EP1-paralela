@@ -237,3 +237,43 @@ void print_grid_numbers(byte *grid, int grid_size) {
         printf("\n");
     }
 }
+
+// Encontra o proximo estado da celula em (i, j): grid_out[ind2d(i,j)],
+// a partir do estado atual (grid_in)
+byte get_next_cell(int i, int j, byte *grid_in, int grid_size) {
+    byte next_cell = EMPTY;
+
+    // Etapa de propagacao:
+    // Para cada direcao, verifica se ha particula vindo daquela direcao
+    for (int dir = 0; dir < NUM_DIRECTIONS; dir++) {
+
+        // rev_dir: direcao oposta a dir
+        int rev_dir = (dir + NUM_DIRECTIONS/2) % NUM_DIRECTIONS;
+        byte rev_dir_mask = 0x01 << rev_dir;
+
+        // (n_i, n_j): coordenadas do vizinho da celula (i, j) na direcao dir
+        int di = directions[i%2][dir][0];
+        int dj = directions[i%2][dir][1];
+        int n_i = i + di;
+        int n_j = j + dj;
+
+        // Verifica se o vizinho esta dentro do grid
+        if (inbounds(n_i, n_j, grid_size)) {
+
+            // Se o vizinho for parede, eh possivel que apareca
+            // em (i, j) uma particula que colidiu com a parede
+            if (grid_in[ind2d(n_i,n_j)] == WALL) {
+                next_cell |= from_wall_collision(i, j, grid_in, grid_size, dir);
+            }
+            // Caso haja uma particula vindo do vizinho para a celula,
+            // atualiza a celula colocando nela essa particula
+            else if (grid_in[ind2d(n_i, n_j)] & rev_dir_mask) {
+                next_cell |= rev_dir_mask;
+            }
+        }
+    }
+
+    // Etapa de colisao: verifica se apos a propagacao,
+    // houve colisao entre particulas em (i, j)
+    return check_particles_collision(next_cell);
+}

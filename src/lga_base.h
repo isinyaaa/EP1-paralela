@@ -51,4 +51,6 @@ void print_grid_animation(byte *grid, int grid_size);
 
 void print_grid_numbers(byte *grid, int grid_size);
 
+byte get_next_cell(int i, int j, byte *grid_in, int grid_size);
+
 #endif
