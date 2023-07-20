@@ -101,7 +101,9 @@ class MonteCarlo:
 
         for run in runs:
             for key in run:
-                if key not in "threads array_exp root".split():
+                if key == "implementation":
+                    run[key] = Implementation(run[key])
+                elif key in ["time", "stddev"]:
                     run[key] = float(run[key])
                 else:
                     run[key] = int(run[key])
