@@ -87,6 +87,19 @@ class MonteCarlo:
         stddev = sum((t - time)**2 for t in times) / self.runs
         return Result(array_exp, threads, impl, time, stddev)
 
+    @staticmethod
+    def __parse_value(value):
+        if value in ["array_exp"]:
+            return int(value)
+        elif value in ["time", "stddev"]:
+            return float(value)
+        elif value in ["threads"]:
+            return int(value)
+        elif value in ["implementation"]:
+            return Implementation(value)
+        else:
+            raise ValueError(f"Unknown key {value}")
+
     def load(self):
         from os.path import exists
 
@@ -101,12 +114,7 @@ class MonteCarlo:
 
         for run in runs:
             for key in run:
-                if key == "implementation":
-                    run[key] = Implementation(run[key])
-                elif key in ["time", "stddev"]:
-                    run[key] = float(run[key])
-                else:
-                    run[key] = int(run[key])
+                run[key] = self.__parse_value(run[key])
 
         return runs
 
@@ -198,7 +206,8 @@ def main():
     from os import mkdir
     from os.path import exists
 
-    assert exists("src"), "Please run from project root"
+    if not exists("src"):
+        raise FileNotFoundError("src/ not found, please run from project root directory")
 
     if not exists("data"):
         mkdir("data")
